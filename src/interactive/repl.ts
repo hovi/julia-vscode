@@ -816,7 +816,45 @@ async function executeCell(shouldMove: boolean = false) {
     }
 }
 
+async function extractMethod(shouldMove: boolean = false) {
+    telemetry.traceEvent('command-extractMethod')
+
+    const editor = vscode.window.activeTextEditor
+    if (editor === undefined) {
+        return
+    }
+    if (vscode.workspace.getConfiguration('julia').get<boolean>('execution.saveOnEval') === true) {
+        await editor.document.save()
+    }
+    await startREPL(true, false)
+
+    var selection = editor.selection;
+    var text = editor.document.getText(selection).toString().replace(/"/g, '\\"');
+
+    let cmd = `
+        using Refactoring
+        #println("Hello world")
+        extracted = extract_method("${text}")
+        println(extracted)
+        extracted
+    `;
+
+    const result = await executeInREPL(cmd, {})
+    var functionCode = result.all.replace(/\\n/g, "\n").replace(`\`\`\`\n\"`, '').replace(`"\n\`\`\``, '').trim();
+    const indent = text.match(/^(\s*).*?/)[1]
+    const callCode = functionCode
+        .split("\n").find(line => line.indexOf("function ") != -1)
+        .replace("function (", "newfunction(")
+    vscode.env.clipboard.writeText(functionCode)
+    editor.edit(
+        builder => {
+            builder.replace(selection, indent + callCode)
+        }
+    )
+}
+
 async function evaluateBlockOrSelection(shouldMove: boolean = false) {
+
     telemetry.traceEvent('command-executeCodeBlockOrSelection')
 
 
@@ -1257,6 +1295,7 @@ export function activate(context: vscode.ExtensionContext, compiledProvider, jul
         registerCommand('language-julia.restartREPL', restartREPL),
         registerCommand('language-julia.disconnectREPL', disconnectREPL),
         registerCommand('language-julia.selectBlock', selectJuliaBlock),
+        registerCommand('language-julia.extractMethod', extractMethod),
         registerCommand('language-julia.executeCodeBlockOrSelection', evaluateBlockOrSelection),
         registerCommand('language-julia.executeCodeBlockOrSelectionAndMove', () => evaluateBlockOrSelection(true)),
         registerCommand('language-julia.executeCell', executeCell),

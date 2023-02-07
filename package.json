@@ -152,6 +152,10 @@
                 "title": "Julia: Execute Code in REPL"
             },
             {
+                "command": "language-julia.extractMethod",
+                "title": "Julia: Extract Method"
+            },
+            {
                 "command": "language-julia.executeJuliaCodeInREPL",
                 "title": "Julia: Send Current Line or Selection to REPL"
             },
@@ -686,6 +690,11 @@
             "editor/context": [
                 {
                     "command": "language-julia.executeCodeBlockOrSelection",
+                    "when": "activeEditor != workbench.editor.notebook && editorLangId in julia.supportedLanguageIds",
+                    "group": "z_commands"
+                },
+                {
+                    "command": "language-julia.extractMethod",
                     "when": "activeEditor != workbench.editor.notebook && editorLangId in julia.supportedLanguageIds",
                     "group": "z_commands"
                 },
