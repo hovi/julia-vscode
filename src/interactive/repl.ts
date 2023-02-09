@@ -833,22 +833,33 @@ async function extractMethod(shouldMove: boolean = false) {
 
     let cmd = `
         using Refactoring
-        #println("Hello world")
+        rm("./refactoring-result.txt")
         extracted = extract_method("${text}")
         println(extracted)
-        extracted
+        println(pwd())
+        write("./refactoring-result.txt", extracted)
+        #extracted
+        pwd() * "/refactoring-result.txt"
     `;
 
+
     const result = await executeInREPL(cmd, {})
-    var functionCode = result.all.replace(/\\n/g, "\n").replace(`\`\`\`\n\"`, '').replace(`"\n\`\`\``, '').trim();
+    //var functionCode = result.all.replace(/\\n/g, "\n").replace(`\`\`\`\n\"`, '').replace(`"\n\`\`\``, '').trim();
     const indent = text.match(/^(\s*).*?/)[1]
+    /*
     const callCode = functionCode
         .split("\n").find(line => line.indexOf("function ") != -1)
         .replace("function (", "newfunction(")
-    vscode.env.clipboard.writeText(functionCode)
+        */
+    //vscode.env.clipboard.writeText(functionCode)
+
+    const codePath = result.all.replace(`\`\`\`\n\"`, '').replace(`"\n\`\`\``, '').replace("\\\\", "\\").trim()
+
+    const buffer = await fs.readFile(codePath)
+    vscode.env.clipboard.writeText(buffer.toString())
     editor.edit(
         builder => {
-            builder.replace(selection, indent + callCode)
+            builder.replace(selection, indent + buffer.toString().split("\n").find(line => line.indexOf("function ") != -1))
         }
     )
 }
